@@ -17,6 +17,8 @@ class MainView(QWidget):
         layout.addWidget(tab)
         self.setLayout(layout)
 
+        self.setFixedSize(600, 400)
+
 
 if __name__ == '__main__':
     import sys
