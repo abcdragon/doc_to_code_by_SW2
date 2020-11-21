@@ -37,8 +37,9 @@ class ClassInfoDialog(QDialog):
         self.show()
 
     def save_class_info(self):
-        name = self.class_name_edit.text()
-        if name[0].isnumeric() and name[0] != '_':
+        name = self.class_name_edit.text().strip()
+
+        if len(name) == 0 or (name[0].isnumeric() and name[0] != '_'):
             msg = QMessageBox()
             msg.setWindowTitle('에러')
             msg.setText('이름의 형식이 올바르지 않습니다.')
@@ -46,8 +47,9 @@ class ClassInfoDialog(QDialog):
             return
 
         self.data['name'] = self.class_name_edit.text().strip()
-        self.data['method'] = {'name': 'test_method'}
-        self.data['variable'] = {'name': 'test_variable'}
+        self.data['method'] = [[('name', 'test_method1'), ('input(type)', 'self'), ('output(type)', 'self')],
+                               [('name', 'test_method2'), ('input(type)', 'self'), ('output(type)', 'self')]]
+        self.data['variable'] = [[('name', 'test_variable'), ('type', 'int'), ('initial value', '0')]]
         self.close()
 
     def cancel(self):
