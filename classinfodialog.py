@@ -12,7 +12,7 @@ class ClassInfoDialog(QDialog):
     def init_ui(self):
         self.setWindowTitle('클래스 정보입력')
 
-        self.edit = {
+        self.component = {
             'class': [('name', QLineEdit()), ('parent', QLineEdit())],
             'method': [('name', QLineEdit()), ('input(type)', QLineEdit()), ('output(type)', QLineEdit())],
             'variable': [('name', QLineEdit()), ('type', QLineEdit()), ('inital value', QLineEdit())]
@@ -22,7 +22,7 @@ class ClassInfoDialog(QDialog):
         for key in ['class', 'method', 'variable']:
             groupbox, layout = QGroupBox(key), QHBoxLayout()
 
-            for label, edit in self.edit[key]:
+            for label, edit in self.component[key]:
                 layout.addWidget(QLabel(label))
                 layout.addWidget(edit)
 
@@ -43,9 +43,16 @@ class ClassInfoDialog(QDialog):
         main_layout.addLayout(button_layout)
         self.setLayout(main_layout)
 
+        self.setModal(True)
         self.show()
 
     def save_class_info(self):
+        for key, info in self.component.items():
+            self.data[key] = {'header': []}
+            for label, edit in info:
+                self.data[key]['header'].append(label)
+                self.data[key][label] = edit.text()
+
         self.close()
 
     def cancel(self):
