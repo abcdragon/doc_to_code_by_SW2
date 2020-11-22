@@ -1,7 +1,6 @@
 from PyQt5.QtWidgets import QWidget
 from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout
 from PyQt5.QtWidgets import QPushButton, QTreeWidget, QTreeWidgetItem
-from PyQt5.QtCore import Qt
 
 from classinfodialog import ClassInfoDialog
 
@@ -9,7 +8,11 @@ from classinfodialog import ClassInfoDialog
 class TextTab(QWidget):
     def __init__(self):
         super().__init__()
+        self.init_ui()
 
+        self.all_data = []
+
+    def init_ui(self):
         self.class_list = QTreeWidget()
         self.class_list.setColumnCount(5)
         self.class_list.setHeaderHidden(True)
@@ -29,11 +32,47 @@ class TextTab(QWidget):
         layout.addLayout(button_layout)
         self.setLayout(layout)
 
+    def add_line_clicked(self):
+        info = ClassInfoDialog()
+        info.exec_()
+
+        if not info.data:
+            return
+
+        self.all_data.append(info.data)
+        new_item = self.create_item(info.data)
+        self.class_list.addTopLevelItem(new_item)
+        self.class_list.scrollToBottom()
+
+    def change_item_content(self):
+        item = self.class_list.selectedItems()[0]
+        index = self.class_list.indexOfTopLevelItem(item)
+
+        while index == -1:
+            item = item.parent()
+            index = self.class_list.indexOfTopLevelItem(item)
+
+        info = ClassInfoDialog(self.all_data[index])
+        info.exec_()
+
+        if not info.data:
+            return
+
+        self.all_data[index] = info.data
+
+        new_item = self.create_item(info.data)
+
+        self.class_list.takeTopLevelItem(index)
+        self.class_list.insertTopLevelItem(index, new_item)
+
+        self.class_list.scrollToBottom()
+
     def create_item(self, info):
         root = QTreeWidgetItem()
         root.setText(0, info['class']['name'])
         if info['class']['parent'] != '':
-            root.setText(0, root.text(0) + ' -> ' + info['class']['parent'])
+            root.setText(1, '->')
+            root.setText(2, info['class']['parent'])
 
         item_roots = [('method', QTreeWidgetItem(root)),
                       ('variable', QTreeWidgetItem(root))]
@@ -52,20 +91,6 @@ class TextTab(QWidget):
                 new_item.setText(index + 1, info[key][header])
 
         return root
-
-    def add_line_clicked(self):
-        info = ClassInfoDialog()
-        info.exec_()
-
-        if not info.data:
-            return
-
-        new_item = self.create_item(info.data)
-        self.class_list.addTopLevelItem(new_item)
-        self.class_list.scrollToBottom()
-
-    def change_item_content(self):
-        print(self.sender())
 
 
 if __name__ == '__main__':
