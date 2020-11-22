@@ -12,11 +12,19 @@ class ClassInfoDialog(QDialog):
     def init_ui(self):
         self.setWindowTitle('클래스 정보입력')
 
-        self.component = {
-            'class': [('name', QLineEdit()), ('parent', QLineEdit())],
-            'method': [('name', QLineEdit()), ('input(type)', QLineEdit()), ('output(type)', QLineEdit())],
-            'variable': [('name', QLineEdit()), ('type', QLineEdit()), ('inital value', QLineEdit())]
-        }
+        self.component = dict()
+        if self.data:
+            for key1 in self.data:
+                self.component[key1] = []
+                for key2 in self.data[key1]['header']:
+                    line_edit = QLineEdit()
+                    line_edit.setText(self.data[key1][key2])
+                    self.component[key1].append((key2, line_edit))
+
+        else:
+            self.component['class'] = [('name', QLineEdit()), ('parent', QLineEdit())]
+            self.component['method'] = [('name', QLineEdit()), ('input(type)', QLineEdit()), ('output(type)', QLineEdit())]
+            self.component['variable'] = [('name', QLineEdit()), ('type', QLineEdit()), ('inital value', QLineEdit())]
 
         main_layout = QVBoxLayout()
         for key in ['class', 'method', 'variable']:
