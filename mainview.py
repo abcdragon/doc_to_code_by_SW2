@@ -3,14 +3,15 @@ from PyQt5.QtWidgets import QHBoxLayout
 from PyQt5.QtWidgets import QLabel
 
 from texttab import TextTab
-
+from filecontrol import save_data
 
 class MainView(QWidget):
     def __init__(self):
         super().__init__()
 
         tab = QTabWidget()
-        tab.addTab(TextTab(), '텍스트')
+        self.text_tab = TextTab()
+        tab.addTab(self.text_tab, '텍스트')
         tab.addTab(QLabel('UML'), 'UML')
 
         layout = QHBoxLayout()
@@ -18,6 +19,9 @@ class MainView(QWidget):
         self.setLayout(layout)
 
         self.setFixedSize(600, 400)
+
+    def closeEvent(self, event):
+        save_data(self.text_tab.all_data)
 
 
 if __name__ == '__main__':
