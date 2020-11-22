@@ -1,22 +1,33 @@
 from PyQt5.QtWidgets import QDialog, QMessageBox
 from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout
-from PyQt5.QtWidgets import QLabel, QLineEdit, QPushButton
+from PyQt5.QtWidgets import QLabel, QLineEdit, QPushButton, QGroupBox
 
 
 class ClassInfoDialog(QDialog):
-    def __init__(self, **pre_information):
+    def __init__(self, pre_information=None):
         super().__init__()
-        self.data = pre_information
+        self.data = pre_information if pre_information else dict()
         self.init_ui()
 
     def init_ui(self):
         self.setWindowTitle('클래스 정보입력')
 
-        class_layout = QHBoxLayout()
-        class_layout.addWidget(QLabel('클래스 이름'))
+        self.edit = {
+            'class': [('name', QLineEdit()), ('parent', QLineEdit())],
+            'method': [('name', QLineEdit()), ('input(type)', QLineEdit()), ('output(type)', QLineEdit())],
+            'variable': [('name', QLineEdit()), ('type', QLineEdit()), ('inital value', QLineEdit())]
+        }
 
-        self.class_name_edit = QLineEdit()
-        class_layout.addWidget(self.class_name_edit)
+        main_layout = QVBoxLayout()
+        for key in ['class', 'method', 'variable']:
+            groupbox, layout = QGroupBox(key), QHBoxLayout()
+
+            for label, edit in self.edit[key]:
+                layout.addWidget(QLabel(label))
+                layout.addWidget(edit)
+
+            groupbox.setLayout(layout)
+            main_layout.addWidget(groupbox)
 
         button_layout = QHBoxLayout()
         button_layout.addStretch(1)
@@ -29,27 +40,12 @@ class ClassInfoDialog(QDialog):
         cancel_button.clicked.connect(self.cancel)
         button_layout.addWidget(cancel_button)
 
-        main_layout = QVBoxLayout()
-        main_layout.addLayout(class_layout)
         main_layout.addLayout(button_layout)
         self.setLayout(main_layout)
 
         self.show()
 
     def save_class_info(self):
-        name = self.class_name_edit.text().strip()
-
-        if len(name) == 0 or (name[0].isnumeric() and name[0] != '_'):
-            msg = QMessageBox()
-            msg.setWindowTitle('에러')
-            msg.setText('이름의 형식이 올바르지 않습니다.')
-            msg.exec_()
-            return
-
-        self.data['name'] = self.class_name_edit.text().strip()
-        self.data['method'] = [[('name', 'test_method1'), ('input(type)', 'self'), ('output(type)', 'self')],
-                               [('name', 'test_method2'), ('input(type)', 'self'), ('output(type)', 'self')]]
-        self.data['variable'] = [[('name', 'test_variable'), ('type', 'int'), ('initial value', '0')]]
         self.close()
 
     def cancel(self):
