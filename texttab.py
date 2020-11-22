@@ -3,14 +3,15 @@ from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout
 from PyQt5.QtWidgets import QPushButton, QTreeWidget, QTreeWidgetItem
 
 from classinfodialog import ClassInfoDialog
+from filecontrol import load_data
 
 
 class TextTab(QWidget):
     def __init__(self):
         super().__init__()
-        self.init_ui()
 
-        self.all_data = []
+        self.all_data = load_data()
+        self.init_ui()
 
     def init_ui(self):
         self.class_list = QTreeWidget()
@@ -18,13 +19,20 @@ class TextTab(QWidget):
         self.class_list.setHeaderHidden(True)
         self.class_list.itemDoubleClicked.connect(self.change_item_content)
 
-        self.add_line = QPushButton('새로운 클래스 추가하기')
-        self.add_line.clicked.connect(self.add_line_clicked)
+        for data in self.all_data:
+            self.class_list.addTopLevelItem(self.create_item(data))
+
+        self.add_item = QPushButton('새로운 클래스 추가하기')
+        self.add_item.clicked.connect(self.add_item_clicked)
+
+        self.del_item = QPushButton('클래스 삭제하기')
+        self.del_item.clicked.connect(self.del_item_clicked)
 
         self.to_file = QPushButton('템플릿 코드 생성하기')
 
         button_layout = QHBoxLayout()
-        button_layout.addWidget(self.add_line)
+        button_layout.addWidget(self.add_item)
+        button_layout.addWidget(self.del_item)
         button_layout.addWidget(self.to_file)
 
         layout = QVBoxLayout()
@@ -32,7 +40,7 @@ class TextTab(QWidget):
         layout.addLayout(button_layout)
         self.setLayout(layout)
 
-    def add_line_clicked(self):
+    def add_item_clicked(self):
         info = ClassInfoDialog()
         info.exec_()
 
@@ -43,6 +51,17 @@ class TextTab(QWidget):
         new_item = self.create_item(info.data)
         self.class_list.addTopLevelItem(new_item)
         self.class_list.scrollToBottom()
+
+    def del_item_clicked(self):
+        item = self.class_list.selectedItems()[0]
+        index = self.class_list.indexOfTopLevelItem(item)
+
+        while index == -1:
+            item = item.parent()
+            index = self.class_list.indexOfTopLevelItem(item)
+
+        self.class_list.takeTopLevelItem(index)
+        del self.all_data[index]
 
     def change_item_content(self):
         item = self.class_list.selectedItems()[0]
