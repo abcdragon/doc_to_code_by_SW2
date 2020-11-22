@@ -13,6 +13,7 @@ class TextTab(QWidget):
         self.class_list = QTreeWidget()
         self.class_list.setColumnCount(5)
         self.class_list.setHeaderHidden(True)
+        self.class_list.itemDoubleClicked.connect(self.change_item_content)
 
         self.add_line = QPushButton('새로운 클래스 추가하기')
         self.add_line.clicked.connect(self.add_line_clicked)
@@ -28,9 +29,11 @@ class TextTab(QWidget):
         layout.addLayout(button_layout)
         self.setLayout(layout)
 
-    def create_item(self, class_info):
+    def create_item(self, info):
         root = QTreeWidgetItem()
-        root.setText(0, class_info['name'])
+        root.setText(0, info['class']['name'])
+        if info['class']['parent'] != '':
+            root.setText(0, root.text(0) + ' -> ' + info['class']['parent'])
 
         item_roots = [('method', QTreeWidgetItem(root)),
                       ('variable', QTreeWidgetItem(root))]
@@ -38,17 +41,15 @@ class TextTab(QWidget):
         for key, item_root in item_roots:
             item_root.setText(0, key)
 
-            if not class_info[key]:
+            if not info[key]:
                 continue
 
-            header = QTreeWidgetItem(item_root)
-            for index, (header_text, _) in enumerate(class_info[key][0]):
-                header.setText(index + 1, header_text)
-
+            header_item = QTreeWidgetItem(item_root)
             new_item = QTreeWidgetItem(item_root)
-            for info in class_info[key]:
-                for index, (_, content) in enumerate(info):
-                    new_item.setText(index + 1, content)
+
+            for index, header in enumerate(info[key]['header']):
+                header_item.setText(index + 1, header)
+                new_item.setText(index + 1, info[key][header])
 
         return root
 
@@ -62,6 +63,9 @@ class TextTab(QWidget):
         new_item = self.create_item(info.data)
         self.class_list.addTopLevelItem(new_item)
         self.class_list.scrollToBottom()
+
+    def change_item_content(self):
+        print(self.sender())
 
 
 if __name__ == '__main__':
