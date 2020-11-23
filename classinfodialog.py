@@ -23,7 +23,7 @@ class ClassInfoDialog(QDialog):
 
         else:
             self.component['class'] = [('name', QLineEdit()), ('parent', QLineEdit())]
-            self.component['method'] = [('name', QLineEdit()), ('input(type)', QLineEdit()), ('output(type)', QLineEdit())]
+            self.component['method'] = [('name', QLineEdit()), ('parameter', QLineEdit()), ('return', QLineEdit())]
             self.component['variable'] = [('name', QLineEdit()), ('type', QLineEdit()), ('inital value', QLineEdit())]
 
         main_layout = QVBoxLayout()
