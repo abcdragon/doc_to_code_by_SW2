@@ -1,41 +1,57 @@
-from PyQt5.QtWidgets import QDialog, QMessageBox
-from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout
+from PyQt5.QtWidgets import QDialog
+from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QGridLayout
 from PyQt5.QtWidgets import QLabel, QLineEdit, QPushButton, QGroupBox
+
+from classinfomodel import DataModel
+
+
+class RemoveButton(QPushButton):
+    def __init__(self, element, row, func):
+        super().__init__('삭제')
+        self.row = row
+        self.element = element
+        self.clicked.connect(func)
 
 
 class ClassInfoDialog(QDialog):
-    def __init__(self, pre_information=None):
+    def __init__(self, pre_info=None):
         super().__init__()
-        self.data = pre_information if pre_information else dict()
+        self.data = pre_info if pre_info else DataModel()
+        print(self.data)
+
         self.init_ui()
 
     def init_ui(self):
         self.setWindowTitle('클래스 정보입력')
 
-        self.component = dict()
-        if self.data:
-            for key1 in self.data:
-                self.component[key1] = []
-                for key2 in self.data[key1]['header']:
-                    line_edit = QLineEdit()
-                    line_edit.setText(self.data[key1][key2])
-                    self.component[key1].append((key2, line_edit))
-
-        else:
-            self.component['class'] = [('name', QLineEdit()), ('parent', QLineEdit())]
-            self.component['method'] = [('name', QLineEdit()), ('parameter', QLineEdit()), ('return', QLineEdit())]
-            self.component['variable'] = [('name', QLineEdit()), ('type', QLineEdit()), ('inital value', QLineEdit())]
+        self.layout = {
+            'class': QGridLayout(),
+            'method': QGridLayout(),
+            'variable': QGridLayout()
+        }
 
         main_layout = QVBoxLayout()
-        for key in ['class', 'method', 'variable']:
-            groupbox, layout = QGroupBox(key), QHBoxLayout()
+        for ele in ['class', 'method', 'variable']:
+            groupbox, layout = QGroupBox(ele), self.layout[ele]
 
-            for label, edit in self.component[key]:
-                layout.addWidget(QLabel(label))
-                layout.addWidget(edit)
+            row = 0
+            for texts in self.data.data[ele]:
+                col = 0
+                for index in range(len(texts)):
+                    layout.addWidget(QLabel(self.data.header[ele][index]), row, col)
+                    layout.addWidget(QLineEdit(texts[index]), row, col + 1)
+                    col += 2
+
+                layout.addWidget(RemoveButton(ele, row, self.remove_button_clicked), row, col)
+                row += 1
 
             groupbox.setLayout(layout)
             main_layout.addWidget(groupbox)
+
+            if ele != 'class':
+                add_button = QPushButton('%s 추가하기' % ele)
+                add_button.clicked.connect(self.add_button_clicked)
+                main_layout.addWidget(add_button)
 
         button_layout = QHBoxLayout()
         button_layout.addStretch(1)
@@ -55,17 +71,36 @@ class ClassInfoDialog(QDialog):
         self.show()
 
     def save_class_info(self):
-        for key, info in self.component.items():
-            self.data[key] = {'header': []}
-            for label, edit in info:
-                self.data[key]['header'].append(label)
-                self.data[key][label] = edit.text()
+        for ele in ['class', 'method', 'variable']:
+            for row in range(self.layout[ele].rowCount()):
+                for col in range(len(self.data.header[ele])):
+                    self.data.data[ele][row][col] = self.layout[ele].itemAtPosition(row, 2 * col + 1).widget().text()
 
         self.close()
 
     def cancel(self):
         self.close()
 
+    def add_button_clicked(self):
+        btn_name = self.sender().text()
+        ele = 'method' if 'method' in btn_name else 'variable'
+
+        self.data.add(ele)
+        row, col = self.layout[ele].rowCount(), 0
+
+        for index in range(len(self.data.data[ele][-1])):
+            self.layout[ele].addWidget(QLabel(self.data.header[ele][index]), row, col)
+            self.layout[ele].addWidget(QLineEdit(self.data.data[ele][-1][index]), row, col + 1)
+            col += 2
+
+        self.layout[ele].addWidget(RemoveButton(ele, row, self.remove_button_clicked), row, col)
+
+    def remove_button_clicked(self):
+        ele, row = self.sender().element, self.sender().row
+        for idx in range(2 * len(self.data.header[ele])):
+            self.layout[ele].itemAtPosition(row, idx).widget().deleteLater()
+
+        self.sender().deleteLater()
 
 if __name__ == '__main__':
     import sys
