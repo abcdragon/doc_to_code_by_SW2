@@ -4,6 +4,7 @@ from PyQt5.QtWidgets import QPushButton, QTreeWidget, QTreeWidgetItem
 
 from classinfodialog import ClassInfoDialog
 from filecontrol import load_data
+from doctocode import DocToCode
 
 
 class TextTab(QWidget):
@@ -29,6 +30,7 @@ class TextTab(QWidget):
         self.del_item.clicked.connect(self.del_item_clicked)
 
         self.to_file = QPushButton('템플릿 코드 생성하기')
+        self.to_file.clicked.connect(self.to_file_clicked)
 
         button_layout = QHBoxLayout()
         button_layout.addWidget(self.add_item)
@@ -43,9 +45,6 @@ class TextTab(QWidget):
     def add_item_clicked(self):
         info = ClassInfoDialog()
         info.exec_()
-
-        if not info.data:
-            return
 
         self.all_data.append(info.data)
         new_item = self.create_item(info.data)
@@ -88,28 +87,31 @@ class TextTab(QWidget):
 
     def create_item(self, info):
         root = QTreeWidgetItem()
-        root.setText(0, info['class']['name'])
-        if info['class']['parent'] != '':
+        root.setText(0, info.data['class'][0][0])
+        if info.data['class'][0][1] != '':
             root.setText(1, '->')
-            root.setText(2, info['class']['parent'])
+            root.setText(2, info.data['class'][0][1])
 
         item_roots = [('method', QTreeWidgetItem(root)),
                       ('variable', QTreeWidgetItem(root))]
 
-        for key, item_root in item_roots:
-            item_root.setText(0, key)
-
-            if not info[key]:
-                continue
+        for ele, item_root in item_roots:
+            item_root.setText(0, ele)
 
             header_item = QTreeWidgetItem(item_root)
-            new_item = QTreeWidgetItem(item_root)
+            new_items = [QTreeWidgetItem(item_root) for _ in range(len(info.data[ele]))]
 
-            for index, header in enumerate(info[key]['header']):
-                header_item.setText(index + 1, header)
-                new_item.setText(index + 1, info[key][header])
+            for idx, header in enumerate(info.header[ele]):
+                header_item.setText(idx + 1, header)
+
+            for row, texts in enumerate(info.data[ele]):
+                for col, text in enumerate(texts):
+                    new_items[row].setText(col + 1, text)
 
         return root
+
+    def to_file_clicked(self):
+        doc_to_code = DocToCode(self.all_data)
 
 
 if __name__ == '__main__':
