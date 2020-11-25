@@ -46,6 +46,10 @@ class TextTab(QWidget):
         info = ClassInfoDialog()
         info.exec_()
 
+        print(info.data)
+        if not info.data:
+            return
+
         self.all_data.append(info.data)
         new_item = self.create_item(info.data)
         self.class_list.addTopLevelItem(new_item)
