@@ -1,8 +1,15 @@
-from PyQt5.QtWidgets import QDialog
+from PyQt5.QtWidgets import QDialog, QMessageBox
 from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QGridLayout
 from PyQt5.QtWidgets import QLabel, QLineEdit, QPushButton, QGroupBox
 
 from classinfomodel import DataModel
+
+import keyword
+import re
+
+
+def nameing_rule(name):
+    return name not in keyword.kwlist and re.fullmatch('[_|A-Za-z]+[\\d|_]*', name)
 
 
 class RemoveButton(QPushButton):
@@ -17,8 +24,7 @@ class ClassInfoDialog(QDialog):
     def __init__(self, pre_info=None):
         super().__init__()
         self.data = pre_info if pre_info else DataModel()
-        print(self.data)
-
+        self.isCancel = True
         self.init_ui()
 
     def init_ui(self):
@@ -42,7 +48,9 @@ class ClassInfoDialog(QDialog):
                     layout.addWidget(QLineEdit(texts[index]), row, col + 1)
                     col += 2
 
-                layout.addWidget(RemoveButton(ele, row, self.remove_button_clicked), row, col)
+                if ele != 'class':
+                    layout.addWidget(RemoveButton(ele, row, self.remove_button_clicked), row, col)
+
                 row += 1
 
             groupbox.setLayout(layout)
@@ -70,16 +78,8 @@ class ClassInfoDialog(QDialog):
         self.setModal(True)
         self.show()
 
-    def save_class_info(self):
-        for ele in ['class', 'method', 'variable']:
-            for row in range(self.layout[ele].rowCount()):
-                for col in range(len(self.data.header[ele])):
-                    self.data.data[ele][row][col] = self.layout[ele].itemAtPosition(row, 2 * col + 1).widget().text()
-
-        self.close()
-
-    def cancel(self):
-        self.close()
+    def get_item(self, element, row, col):
+        return self.layout[element].itemAtPosition(row, col).widget()
 
     def add_button_clicked(self):
         btn_name = self.sender().text()
@@ -97,10 +97,80 @@ class ClassInfoDialog(QDialog):
 
     def remove_button_clicked(self):
         ele, row = self.sender().element, self.sender().row
+        if self.layout[ele].rowCount() == 1:
+            return
+
         for idx in range(2 * len(self.data.header[ele])):
-            self.layout[ele].itemAtPosition(row, idx).widget().deleteLater()
+            self.get_item(ele, row, idx).deleteLater()
 
         self.sender().deleteLater()
+
+    def chk_class_info(self):
+    #   class 체크
+        class_name = self.get_item('class', 0, 1).text().strip()
+        if not nameing_rule(class_name):
+            return False
+
+        class_parent = self.get_item('class', 0, 3).text().strip()
+        if class_parent and not nameing_rule(class_parent):
+            return False
+    
+    #   method 체크
+        for row in range(self.layout['method'].rowCount()):
+            method_name = self.get_item('method', row, 1).text().strip()
+            if method_name and not nameing_rule(method_name):
+                return False
+
+            method_input = self.get_item('method', row, 3).text().strip()
+            if method_input and not nameing_rule(method_input):
+                return False
+
+    #   variable 체크
+        for row in range(self.layout['variable'].rowCount()):
+            variable_name = self.get_item('variable', row, 1).text().strip()
+            if variable_name and not nameing_rule(variable_name):
+                return False
+
+            variable_type = self.get_item('variable', row, 3).text().strip()
+            if not nameing_rule(variable_type):
+                return False
+
+            variable_initial_value = self.get_item('variable', row, 5).text().strip()
+            if variable_type != 'str':
+                try:
+                    eval('%s(%s)' % (variable_type, variable_initial_value))
+
+                except ValueError:
+                    return False
+
+        return True
+
+    def save_class_info(self):
+        if not self.chk_class_info():
+            box = QMessageBox()
+            box.setWindowTitle('경고')
+            box.setText('입력에 문제가 있습니다. 확인해주세요')
+            box.setModal(True)
+            box.exec_()
+            return
+
+        for ele in ['class', 'method', 'variable']:
+            for row in range(self.layout[ele].rowCount()):
+                for col in range(len(self.data.header[ele])):
+                    self.data.data[ele][row][col] = self.get_item(ele, row, 2 * col + 1).text().strip()
+
+        self.isCancel = False
+        self.close()
+
+    def cancel(self):
+        self.data = None
+        self.isCancel = True
+        self.close()
+
+    def closeEvent(self, event):
+        if self.isCancel:
+            self.data = None
+
 
 if __name__ == '__main__':
     import sys
