@@ -1,9 +1,10 @@
 import pickle
+import os
 
 
 def load_data():
     try:
-        with open('data.save', 'rb') as file:
+        with open('project_data.pyprojt', 'rb') as file:
             data = pickle.load(file)
         return data
 
@@ -14,6 +15,6 @@ def load_data():
         return []
 
 
-def save_data(data):
-    with open('data.save', 'wb') as file:
+def save_data(data, full_path):
+    with open(full_path + '/project_data.pyprojt', 'wb') as file:
         pickle.dump(data, file)
