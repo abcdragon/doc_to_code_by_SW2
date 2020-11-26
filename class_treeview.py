@@ -3,15 +3,12 @@ from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout
 from PyQt5.QtWidgets import QPushButton, QTreeWidget, QTreeWidgetItem
 
 from classinfodialog import ClassInfoDialog
-from filecontrol import load_data
 from doctocode import DocToCode
 
 
-class TextTab(QWidget):
+class ClassTreeView(QWidget):
     def __init__(self):
         super().__init__()
-
-        self.all_data = load_data()
         self.init_ui()
 
     def init_ui(self):
@@ -115,7 +112,7 @@ class TextTab(QWidget):
         return root
 
     def to_file_clicked(self):
-        doc_to_code = DocToCode(self.all_data)
+        DocToCode(self.all_data)
 
 
 if __name__ == '__main__':
@@ -123,6 +120,6 @@ if __name__ == '__main__':
     from PyQt5.QtWidgets import QApplication
 
     app = QApplication(sys.argv)
-    main = TextTab()
+    main = ClassTreeView()
     main.show()
     sys.exit(app.exec_())
