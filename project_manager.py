@@ -10,12 +10,11 @@ class ProjectManager(QWidget):
     def __init__(self, project_path, pre_data=None):
         super().__init__()
 
-        self.project_name = project_path[project_path.rfind('/')+1:]
         self.project_path = project_path
-
         self.project = {
-            'file': [],
-            'info_view': []
+            'name': project_path[project_path.rfind('/')+1:],
+            'files': [],
+            'infos': []
         } if not pre_data else pre_data
 
         self.init_ui()
@@ -31,17 +30,21 @@ class ProjectManager(QWidget):
         file_del_button.clicked.connect(self.file_del)
         btn_layout.addWidget(file_del_button)
 
+        self.class_view = QStackedWidget()
+
         self.file_list = QListWidget()
         self.file_list.clicked.connect(self.change_view)
+
+        for file, view in zip(self.project['files'], self.project['infos']):
+            self.file_list.addItem(file)
+            self.class_view.addWidget(view)
 
         file_layout = QVBoxLayout()
         file_layout.addWidget(self.file_list)
         file_layout.addLayout(btn_layout)
 
-        file_group = QGroupBox(self.project_name)
+        file_group = QGroupBox(self.project['name'])
         file_group.setLayout(file_layout)
-
-        self.class_view = QStackedWidget()
 
         main_layout = QGridLayout()
         main_layout.addWidget(file_group, 0, 0, 0, 2)
@@ -56,7 +59,7 @@ class ProjectManager(QWidget):
     def file_add(self):
         while True:
             file_name, success = QInputDialog.getText(self, '파일 이름', '파일 이름을 입력해주세요')
-            if file_name not in self.project['file']:
+            if file_name not in self.project['files']:
                 break
 
             box = QMessageBox()
@@ -66,11 +69,11 @@ class ProjectManager(QWidget):
             box.exec_()
 
         if file_name and success:
-            self.file_list.addItem(file_name)
-            self.project['file'].append(file_name)
+            self.project['files'].append(file_name)
+            self.file_list.addItem(self.project['files'][-1])
 
-            self.project['info_view'].append(ClassTreeView())
-            self.class_view.addWidget(self.project['info_view'][-1])
+            self.project['infos'].append(ClassTreeView())
+            self.class_view.addWidget(self.project['infos'][-1])
 
     def file_del(self):
         selected_item = self.file_list.selectedItems()
@@ -83,11 +86,11 @@ class ProjectManager(QWidget):
         if success and confirm and confirm == selected_item.text():
             row = self.file_list.selectedIndexes()[0].row()
 
-            self.class_view.removeWidget(self.project['info_view'][row])
-            self.project['info_view'].pop(row)
+            self.class_view.removeWidget(self.project['infos'][row])
+            self.project['infos'].pop(row)
 
             self.file_list.takeItem(self.file_list.row(selected_item))
-            self.project['file'].pop(row)
+            self.project['files'].pop(row)
 
     def closeEvent(self, event):
         save_data(self.project, self.project_path)
