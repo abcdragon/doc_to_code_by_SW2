@@ -1,18 +1,17 @@
 import pickle
-import os
 
 
-def load_data():
+def load_data(full_path):
     try:
-        with open('project_data.pyprojt', 'rb') as file:
+        with open(full_path + '/project_data.pyprojt', 'rb') as file:
             data = pickle.load(file)
         return data
 
     except FileNotFoundError:
-        return []
+        return None
 
     except:
-        return []
+        return None
 
 
 def save_data(data, full_path):
