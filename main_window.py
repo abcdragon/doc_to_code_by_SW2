@@ -1,8 +1,9 @@
 from PyQt5.QtWidgets import QMainWindow, QWidget
-from PyQt5.QtWidgets import QGridLayout, QHBoxLayout, QDialog, QInputDialog, QFileDialog
+from PyQt5.QtWidgets import QGridLayout, QHBoxLayout, QDialog, QFileDialog
 from PyQt5.QtWidgets import QLabel, QLineEdit, QPushButton
 
 from project_manager import ProjectManager
+from filecontrol import load_data, save_data
 
 import os
 
@@ -94,7 +95,7 @@ class MainWindow(QMainWindow):
         self.setFixedSize(400, 250)
         self.show()
 
-    def new_project(self, data=None):
+    def new_project(self):
         dialog = NewProjectDialog()
         dialog.exec_()
 
@@ -102,20 +103,20 @@ class MainWindow(QMainWindow):
             print(dialog.full_path.text())
             os.mkdir(dialog.full_path.text())
 
-            pm = ProjectManager(pre_data=data, project_name=dialog.project_name.text())
-            self.setCentralWidget(pm)
+            self.setCentralWidget(ProjectManager(dialog.project_name.text()))
 
     def open_project(self):
-        #self.setCentralWidget(ProjectManager())
+        path = str(QFileDialog.getExistingDirectory(self, '경로'))
 
-        # data = file 다이얼 로그에서 파일 받아온 데이터
-        #self.new_project(data)
-        pass
+        if path:
+            data = load_data(path)
+            if data:
+                self.setCentralWidget(ProjectManager(path, pre_data=data))
     
     def closeEvent(self, event):
         if type(self.centralWidget()) == type(ProjectManager):
+            save_data(self.centralWidget().project, self.centralWidget().project_path)
             print('저장하기')
-            pass            
 
 
 if __name__ == '__main__':
