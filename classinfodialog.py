@@ -24,7 +24,7 @@ class ClassInfoDialog(QDialog):
     def __init__(self, pre_info=None):
         super().__init__()
         self.data = pre_info if pre_info else DataModel()
-        self.isCancel = True
+        self.success = False
         self.init_ui()
 
     def init_ui(self):
@@ -159,17 +159,11 @@ class ClassInfoDialog(QDialog):
                 for col in range(len(self.data.header[ele])):
                     self.data.data[ele][row][col] = self.get_item(ele, row, 2 * col + 1).text().strip()
 
-        self.isCancel = False
+        self.success = True
         self.close()
 
     def cancel(self):
-        self.data = None
-        self.isCancel = True
         self.close()
-
-    def closeEvent(self, event):
-        if self.isCancel:
-            self.data = None
 
 
 if __name__ == '__main__':
