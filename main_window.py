@@ -103,7 +103,9 @@ class MainWindow(QMainWindow):
             print(dialog.full_path.text())
             os.mkdir(dialog.full_path.text())
 
-            self.setCentralWidget(ProjectManager(dialog.project_name.text()))
+            pm = ProjectManager(dialog.full_path.text())
+            self.setCentralWidget(pm)
+            self.setFixedSize(pm.size())
 
     def open_project(self):
         path = str(QFileDialog.getExistingDirectory(self, '경로'))
@@ -111,11 +113,16 @@ class MainWindow(QMainWindow):
         if path:
             data = load_data(path)
             if data:
-                self.setCentralWidget(ProjectManager(path, pre_data=data))
+                pm = ProjectManager(path, pre_data=data)
+                self.setCentralWidget(pm)
+                self.setFixedSize(pm.size())
     
     def closeEvent(self, event):
-        if type(self.centralWidget()) == type(ProjectManager):
-            save_data(self.centralWidget().project, self.centralWidget().project_path)
+        if isinstance(self.centralWidget(), ProjectManager):
+            widget = self.centralWidget()
+            print(widget.project['infos'])
+            widget.project['infos'] = [infos.all_data for infos in widget.project['infos']]
+            save_data(widget.project, widget.project_path)
             print('저장하기')
 
 
