@@ -10,12 +10,22 @@ class ProjectManager(QWidget):
     def __init__(self, project_path, pre_data=None):
         super().__init__()
 
+        self.class_view = QStackedWidget()
+        self.file_list = QListWidget()
+
         self.project_path = project_path
         self.project = {
             'name': project_path[project_path.rfind('/')+1:],
             'files': [],
             'infos': []
-        } if not pre_data else pre_data
+        }
+
+        if pre_data:
+            self.project['files'] = pre_data['files']
+            for file, info in zip(self.project['files'], pre_data['infos']):
+                self.file_list.addItem(file)
+                self.project['infos'].append(ClassTreeView(pre_data=info))
+                self.class_view.addWidget(self.project['infos'][-1])
 
         self.init_ui()
 
@@ -30,14 +40,7 @@ class ProjectManager(QWidget):
         file_del_button.clicked.connect(self.file_del)
         btn_layout.addWidget(file_del_button)
 
-        self.class_view = QStackedWidget()
-
-        self.file_list = QListWidget()
         self.file_list.clicked.connect(self.change_view)
-
-        for file, view in zip(self.project['files'], self.project['infos']):
-            self.file_list.addItem(file)
-            self.class_view.addWidget(view)
 
         file_layout = QVBoxLayout()
         file_layout.addWidget(self.file_list)
@@ -91,9 +94,6 @@ class ProjectManager(QWidget):
 
             self.file_list.takeItem(self.file_list.row(selected_item))
             self.project['files'].pop(row)
-
-    def closeEvent(self, event):
-        save_data(self.project, self.project_path)
 
 
 if __name__ == '__main__':
