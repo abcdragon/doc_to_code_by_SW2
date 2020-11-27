@@ -3,7 +3,6 @@ from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout, QGridLayout, QGroupBox
 from PyQt5.QtWidgets import QPushButton, QStackedWidget, QListWidget, QInputDialog, QMessageBox
 
 from class_treeview import ClassTreeView
-from filecontrol import save_data
 
 
 class ProjectManager(QWidget):
