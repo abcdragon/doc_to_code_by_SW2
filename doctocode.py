@@ -22,9 +22,9 @@ class DocToCode:
                         _variable_declare += ("'%s'\n" if var_info[1] == 'str' else '%s') % var_info[2]
 
                 if '=' not in _variable_declare:
-                    _variable_declare += tab(2) + 'pass\n\n'
+                    _variable_declare += tab(2) + 'pass\n'
 
-                file.write(_variable_declare)
+                file.write(_variable_declare + '\n')
 
                 _method = obj.data['method']
                 _method_declare = ''
