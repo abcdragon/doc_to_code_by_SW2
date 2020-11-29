@@ -4,14 +4,12 @@ from PyQt5.QtWidgets import QPushButton, QStackedWidget, QListWidget, QInputDial
 
 from class_treeview import ClassTreeView
 
+import os
+
 
 class ProjectManager(QWidget):
     def __init__(self, project_path, pre_data=None):
         super().__init__()
-
-        self.class_view = QStackedWidget()
-        self.file_list = QListWidget()
-
         self.project_path = project_path
         self.project = {
             'name': project_path[project_path.rfind('/')+1:],
@@ -19,11 +17,16 @@ class ProjectManager(QWidget):
             'infos': []
         }
 
+        self.class_view = QStackedWidget()
+        self.file_list = QListWidget()
+        self.file_list.doubleClicked.connect(self.file_name_change)
+        self.file_group = QGroupBox(self.project['name'])
+
         if pre_data:
             self.project['files'] = pre_data['files']
             for file, info in zip(self.project['files'], pre_data['infos']):
                 self.file_list.addItem(file)
-                self.project['infos'].append(ClassTreeView(pre_data=info))
+                self.project['infos'].append(ClassTreeView(self.project_path + '/' + self.project['files'][-1], pre_data=info))
                 self.class_view.addWidget(self.project['infos'][-1])
 
         self.init_ui()
@@ -45,11 +48,11 @@ class ProjectManager(QWidget):
         file_layout.addWidget(self.file_list)
         file_layout.addLayout(btn_layout)
 
-        file_group = QGroupBox(self.project['name'])
-        file_group.setLayout(file_layout)
+        self.file_group.mouseDoubleClickEvent = self.get_project_name
+        self.file_group.setLayout(file_layout)
 
         main_layout = QGridLayout()
-        main_layout.addWidget(file_group, 0, 0, 0, 2)
+        main_layout.addWidget(self.file_group, 0, 0, 0, 2)
         main_layout.addWidget(self.class_view, 0, 2)
         self.setLayout(main_layout)
 
@@ -58,7 +61,26 @@ class ProjectManager(QWidget):
     def change_view(self):
         self.class_view.setCurrentIndex(self.file_list.selectedIndexes()[0].row())
 
-    def file_add(self):
+    def get_project_name(self, event):
+        while True:
+            project_name, success = QInputDialog.getText(self, '프로젝트 이름', '프로젝트 이름을 입력해주세요')
+            new_path = self.project_path[:self.project_path.rfind('/')] + '/' + project_name
+            if not os.path.exists(new_path) or not success:
+                break
+
+            box = QMessageBox()
+            box.setWindowTitle('경고')
+            box.setText('이미 존재하는 폴더입니다.')
+            box.setModal(True)
+            box.exec_()
+
+        if success and project_name:
+            self.file_group.setTitle(new_path[new_path.rfind('/')+1:])
+            self.project['name'] = new_path[new_path.rfind('/')+1:]
+            os.rename(self.project_path, new_path)
+            self.project_path = new_path
+
+    def get_file_name(self):
         while True:
             file_name, success = QInputDialog.getText(self, '파일 이름', '파일 이름을 입력해주세요')
             if file_name not in self.project['files']:
@@ -70,11 +92,28 @@ class ProjectManager(QWidget):
             box.setModal(True)
             box.exec_()
 
+        return file_name, success
+
+    def file_name_change(self):
+        file_name, success = self.get_file_name()
+
+        if file_name and success:
+            index = self.file_list.selectedIndexes()[0].row()
+            self.project['files'][index] = file_name
+            if os.path.exists(self.project['infos'][index].file_full_path + '.py'):
+                os.remove(self.project['infos'][index].file_full_path + '.py')
+
+            self.project['infos'][index].file_full_path = self.project_path + '/' + file_name
+            self.file_list.selectedItems()[0].setText(file_name)
+
+    def file_add(self):
+        file_name, success = self.get_file_name()
+
         if file_name and success:
             self.project['files'].append(file_name)
             self.file_list.addItem(self.project['files'][-1])
 
-            self.project['infos'].append(ClassTreeView())
+            self.project['infos'].append(ClassTreeView(self.project_path + '/' + self.project['files'][-1]))
             self.class_view.addWidget(self.project['infos'][-1])
 
     def file_del(self):
