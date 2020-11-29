@@ -1,10 +1,9 @@
 class DocToCode:
-    def __init__(self, root):
+    def __init__(self, file_path, root):
         tab = lambda w: ' ' * 4 * w
 
-        with open('new_file.py', 'w') as file:
+        with open(file_path + '.py', 'w') as file:
             for obj in root:
-                print(root)
                 _class = obj.data['class'][0]
                 _class_declare = 'class ' + _class[0]
 
