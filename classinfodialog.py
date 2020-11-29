@@ -69,6 +69,7 @@ class ClassInfoDialog(QDialog):
         main_layout.addLayout(button_layout)
         self.setLayout(main_layout)
 
+        self.setFixedSize(700, 300)
         self.setModal(True)
         self.show()
 
