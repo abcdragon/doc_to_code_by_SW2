@@ -7,10 +7,11 @@ from doctocode import DocToCode
 
 
 class ClassTreeView(QWidget):
-    def __init__(self, pre_data=None):
+    def __init__(self, file_full_path, pre_data=None):
         super().__init__()
 
         self.all_data = pre_data if pre_data else []
+        self.file_full_path = file_full_path
 
         self.init_ui()
 
@@ -18,116 +19,31 @@ class ClassTreeView(QWidget):
         self.class_list = QTreeWidget()
         self.class_list.setColumnCount(5)
         self.class_list.setHeaderHidden(True)
-        self.class_list.itemDoubleClicked.connect(self.change_item_content)
+        self.class_list.itemDoubleClicked.connect(self.change_item)
         for data in self.all_data:
             self.class_list.addTopLevelItem(self.create_item(data))
             self.class_list.scrollToBottom()
 
-        self.add_item = QPushButton('새로운 클래스 추가하기')
-        self.add_item.clicked.connect(self.add_item_clicked)
+        add_item_button = QPushButton('새로운 클래스 추가하기')
+        add_item_button.clicked.connect(self.add_item)
 
-        self.del_item = QPushButton('클래스 삭제하기')
-        self.del_item.clicked.connect(self.del_item_clicked)
+        del_item_button = QPushButton('클래스 삭제하기')
+        del_item_button.clicked.connect(self.del_item)
 
-        self.to_file = QPushButton('템플릿 코드 생성하기')
-        self.to_file.clicked.connect(self.to_file_clicked)
+        to_file_button = QPushButton('템플릿 코드 생성하기')
+        to_file_button.clicked.connect(self.to_file)
 
         button_layout = QHBoxLayout()
-        button_layout.addWidget(self.add_item)
-        button_layout.addWidget(self.del_item)
-        button_layout.addWidget(self.to_file)
+        button_layout.addWidget(add_item_button)
+        button_layout.addWidget(del_item_button)
+        button_layout.addWidget(to_file_button)
 
         layout = QVBoxLayout()
         layout.addWidget(self.class_list)
         layout.addLayout(button_layout)
         self.setLayout(layout)
 
-    def add_item_clicked(self):
-        info = None
-        while True:
-            info = ClassInfoDialog(info.data if info else None)
-            info.exec_()
-
-            if not info.success:
-                break
-
-            box = QMessageBox()
-            box.setWindowTitle('경고')
-            box.setModal(True)
-
-            # 클래스 이름이 같은게 있으면 continue
-            if [0 for data in self.all_data if data.data['class'][0][0] == info.data.data['class'][0][0]]:
-                box.setText('클래스의 이름이 겹쳤습니다.')
-                box.exec_()
-
-                continue
-
-            # 메서드 이름이 같은게 있으면 강제 종료해서 while 처음으로 돌아가고,
-            for info_name, info_para, _ in info.data.data['method']:
-                if [0 for data in self.all_data for name, _, _ in data.data['method'] if name == info_name]:
-                    box.setText('메서드의 이름이 겹치는 요소가 있습니다.')
-                    box.exec_()
-                    break
-
-                tmp = [c for c in info_para.replace(',', ' ').split(' ') if c]
-                if len(tmp) != len(set(tmp)):
-                    box.setText('매개변수 중 겹치는 것이 있습니다.')
-                    box.exec_()
-                    break
-
-            # 메서드 이름이 겹치지 않고, 매개변수도 안 겹친다면 변수에 대해 검색
-            else:
-                # 변수 이름이 같은게 있으면 강제 종료해서 while 처음으로 돌아가고
-                for info_name, _, _ in info.data.data['variable']:
-                    if [0 for data in self.all_data for name, _, _ in data.data['variable'] if name == info_name]:
-                        box.setText('변수의 이름이 겹치는 요소가 있습니다.')
-                        box.exec_()
-
-                        break
-
-                # 변수 이름까지 같은게 없으면 break으로 while문 탈출
-                else:
-                    break
-
-        if info.success:
-            self.all_data.append(info.data)
-            self.class_list.addTopLevelItem(self.create_item(info.data))
-            self.class_list.scrollToBottom()
-
-    def del_item_clicked(self):
-        item = self.class_list.selectedItems()[0]
-        index = self.class_list.indexOfTopLevelItem(item)
-
-        while index == -1:
-            item = item.parent()
-            index = self.class_list.indexOfTopLevelItem(item)
-
-        self.class_list.takeTopLevelItem(index)
-        del self.all_data[index]
-
-    def change_item_content(self):
-        item = self.class_list.selectedItems()[0]
-        index = self.class_list.indexOfTopLevelItem(item)
-
-        while index == -1:
-            item = item.parent()
-            index = self.class_list.indexOfTopLevelItem(item)
-
-        info = ClassInfoDialog(self.all_data[index])
-        info.exec_()
-
-        if not info.success:
-            return
-
-        self.all_data[index] = info.data
-
-        new_item = self.create_item(info.data)
-
-        self.class_list.takeTopLevelItem(index)
-        self.class_list.insertTopLevelItem(index, new_item)
-
-        self.class_list.scrollToBottom()
-
+    # 아이템 생성
     def create_item(self, info):
         root = QTreeWidgetItem()
         root.setText(0, info.data['class'][0][0])
@@ -142,26 +58,88 @@ class ClassTreeView(QWidget):
             item_root.setText(0, ele)
 
             header_item = QTreeWidgetItem(item_root)
-            new_items = [QTreeWidgetItem(item_root) for _ in range(len(info.data[ele]))]
-
             for idx, header in enumerate(info.header[ele]):
                 header_item.setText(idx + 1, header)
 
+            new_items = [QTreeWidgetItem(item_root) for _ in range(len(info.data[ele]))]
             for row, texts in enumerate(info.data[ele]):
                 for col, text in enumerate(texts):
                     new_items[row].setText(col + 1, text)
 
         return root
+    
+    # 아이템 추가
+    def add_item(self):
+        info = None
+        while True:
+            info = ClassInfoDialog(info.data if info else None)
+            info.exec_()
 
-    def to_file_clicked(self):
-        DocToCode(self.all_data)
+            if not info.success:
+                break
 
+            # 클래스 이름이 같은게 있으면 continue
+            if not [0 for data in self.all_data if data.data['class'][0][0] == info.data.data['class'][0][0]]:
+                break
 
-if __name__ == '__main__':
-    import sys
-    from PyQt5.QtWidgets import QApplication
+            box = QMessageBox()
+            box.setWindowTitle('경고')
+            box.setModal(True)
+            box.setText('클래스의 이름이 겹쳤습니다.')
+            box.exec_()
 
-    app = QApplication(sys.argv)
-    main = ClassTreeView()
-    main.show()
-    sys.exit(app.exec_())
+        if info.success:
+            self.all_data.append(info.data)
+            self.class_list.addTopLevelItem(self.create_item(info.data))
+            self.class_list.scrollToBottom()
+
+    # 아이템 변경
+    def change_item(self):
+        item = self.class_list.selectedItems()[0]
+        index = self.class_list.indexOfTopLevelItem(item)
+
+        while index == -1:
+            item = item.parent()
+            index = self.class_list.indexOfTopLevelItem(item)
+
+        info = None
+        while True:
+            info = ClassInfoDialog(info.data if info else None)
+            info.exec_()
+
+            if not info.success:
+                break
+
+            # 클래스 이름이 같은게 있으면 continue
+            if not [0 for data in self.all_data if data.data['class'][0][0] == info.data.data['class'][0][0]]:
+                break
+
+            box = QMessageBox()
+            box.setWindowTitle('경고')
+            box.setModal(True)
+            box.setText('클래스의 이름이 겹쳤습니다.')
+            box.exec_()
+
+        if info.success:
+            self.all_data[index] = info.data
+
+            new_item = self.create_item(info.data)
+
+            self.class_list.takeTopLevelItem(index)
+            self.class_list.insertTopLevelItem(index, new_item)
+
+            self.class_list.scrollToBottom()
+
+    def del_item(self):
+        item = self.class_list.selectedItems()[0]
+        index = self.class_list.indexOfTopLevelItem(item)
+
+        while index == -1:
+            item = item.parent()
+            index = self.class_list.indexOfTopLevelItem(item)
+
+        self.class_list.takeTopLevelItem(index)
+        del self.all_data[index]
+
+    def to_file(self):
+        DocToCode(self.file_full_path, self.all_data)
