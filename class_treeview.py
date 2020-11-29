@@ -104,14 +104,13 @@ class ClassTreeView(QWidget):
 
         info = None
         while True:
-            info = ClassInfoDialog(info.data if info else None)
+            info = ClassInfoDialog(pre_info=info.data if info else self.all_data[index])
             info.exec_()
 
             if not info.success:
                 break
 
-            # 클래스 이름이 같은게 있으면 continue
-            if not [0 for data in self.all_data if data.data['class'][0][0] == info.data.data['class'][0][0]]:
+            if not [0 for i, data in enumerate(self.all_data) if i != index and data.data['class'][0][0] == info.data.data['class'][0][0]]:
                 break
 
             box = QMessageBox()
