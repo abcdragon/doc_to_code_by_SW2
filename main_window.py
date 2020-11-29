@@ -11,9 +11,7 @@ import os
 class ProjectMenu(QWidget):
     def __init__(self):
         super().__init__()
-        self.init_ui()
 
-    def init_ui(self):
         project_button_layout = QHBoxLayout()
         self.new_project = QPushButton('새 프로젝트 만들기')
         project_button_layout.addWidget(self.new_project)
@@ -28,7 +26,7 @@ class NewProjectDialog(QDialog):
     def __init__(self):
         super().__init__()
         self.success = False
-        self.path = 'C:\\'
+        self.path = 'C:/'
 
         self.project_name = QLineEdit()
         self.project_name.textChanged.connect(self.update_path)
@@ -100,7 +98,6 @@ class MainWindow(QMainWindow):
         dialog.exec_()
 
         if dialog.success:
-            print(dialog.full_path.text())
             os.mkdir(dialog.full_path.text())
 
             pm = ProjectManager(dialog.full_path.text())
@@ -120,10 +117,8 @@ class MainWindow(QMainWindow):
     def closeEvent(self, event):
         if isinstance(self.centralWidget(), ProjectManager):
             widget = self.centralWidget()
-            print(widget.project['infos'])
             widget.project['infos'] = [infos.all_data for infos in widget.project['infos']]
             save_data(widget.project, widget.project_path)
-            print('저장하기')
 
 
 if __name__ == '__main__':
