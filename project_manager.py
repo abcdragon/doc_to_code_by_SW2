@@ -26,7 +26,7 @@ class ProjectManager(QWidget):
             self.project['files'] = pre_data['files']
             for file, info in zip(self.project['files'], pre_data['infos']):
                 self.file_list.addItem(file)
-                self.project['infos'].append(ClassTreeView(self.project_path + '/' + self.project['files'][-1], pre_data=info))
+                self.project['infos'].append(ClassTreeView(self.project_path + '/' + file, pre_data=info))
                 self.class_view.addWidget(self.project['infos'][-1])
 
         self.init_ui()
@@ -83,7 +83,7 @@ class ProjectManager(QWidget):
     def get_file_name(self):
         while True:
             file_name, success = QInputDialog.getText(self, '파일 이름', '파일 이름을 입력해주세요')
-            if file_name not in self.project['files']:
+            if file_name.lower() not in [s.lower() for s in self.project['files']]:
                 break
 
             box = QMessageBox()
@@ -132,6 +132,9 @@ class ProjectManager(QWidget):
 
             self.file_list.takeItem(self.file_list.row(selected_item))
             self.project['files'].pop(row)
+
+            if os.path.exists('%s/%s.py' % (self.project_path, confirm)):
+                os.remove('%s/%s.py' % (self.project_path, confirm))
 
 
 if __name__ == '__main__':
