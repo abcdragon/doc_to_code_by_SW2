@@ -6,8 +6,7 @@ class DataModel:
             'variable': ['name', 'type', 'initial type']
         }
 
-        self.data = {ele: [[''] * len(h)] for ele, h in self.header.items()}
-        self.data['variable'][0][1] = 'str'
+        self.data = {'class': [['', '']], 'method': [], 'variable': []}
 
     def add(self, ele):
         new_datum = [''] * len(self.header[ele])
