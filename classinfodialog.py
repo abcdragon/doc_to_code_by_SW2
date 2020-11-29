@@ -9,7 +9,7 @@ import re
 
 
 def nameing_rule(name):
-    return name not in keyword.kwlist and re.fullmatch('[_|A-Za-z]+[\\d|_]*', name)
+    return re.fullmatch('[_|A-Za-z]+[\\d|_]*', name)
 
 
 class RemoveButton(QPushButton):
@@ -30,34 +30,28 @@ class ClassInfoDialog(QDialog):
     def init_ui(self):
         self.setWindowTitle('클래스 정보입력')
 
-        self.layout = {
-            'class': QGridLayout(),
-            'method': QGridLayout(),
-            'variable': QGridLayout()
-        }
+        self.layout = {element: QVBoxLayout() for element in ['class', 'method', 'variable']}
 
         main_layout = QVBoxLayout()
-        for ele in ['class', 'method', 'variable']:
-            groupbox, layout = QGroupBox(ele), self.layout[ele]
+        for element in ['class', 'method', 'variable']:
+            groupbox, ele_layout = QGroupBox(element), self.layout[element]
 
-            row = 0
-            for texts in self.data.data[ele]:
-                col = 0
+            for row, texts in enumerate(self.data.data[element]):
+                layout = QHBoxLayout()
                 for index in range(len(texts)):
-                    layout.addWidget(QLabel(self.data.header[ele][index]), row, col)
-                    layout.addWidget(QLineEdit(texts[index]), row, col + 1)
-                    col += 2
+                    layout.addWidget(QLabel(self.data.header[element][index]))
+                    layout.addWidget(QLineEdit(texts[index]))
 
-                if ele != 'class':
-                    layout.addWidget(RemoveButton(ele, row, self.remove_button_clicked), row, col)
+                if element != 'class':
+                    layout.addWidget(RemoveButton(element, row, self.remove_button_clicked))
 
-                row += 1
+                ele_layout.addLayout(layout)
 
-            groupbox.setLayout(layout)
+            groupbox.setLayout(ele_layout)
             main_layout.addWidget(groupbox)
 
-            if ele != 'class':
-                add_button = QPushButton('%s 추가하기' % ele)
+            if element != 'class':
+                add_button = QPushButton('%s 추가하기' % element)
                 add_button.clicked.connect(self.add_button_clicked)
                 main_layout.addWidget(add_button)
 
@@ -78,84 +72,98 @@ class ClassInfoDialog(QDialog):
         self.setModal(True)
         self.show()
 
-    def get_item(self, element, row, col):
-        return self.layout[element].itemAtPosition(row, col).widget()
+    def get_item(self, element, row, col=-1):
+        return self.layout[element].itemAt(row).layout().itemAt(col).widget() if col >= 0 else self.layout[element].itemAt(row)
 
     def add_button_clicked(self):
         btn_name = self.sender().text()
         ele = 'method' if 'method' in btn_name else 'variable'
 
         self.data.add(ele)
-        row, col = self.layout[ele].rowCount(), 0
 
+        h_layout = QHBoxLayout()
         for index in range(len(self.data.data[ele][-1])):
-            self.layout[ele].addWidget(QLabel(self.data.header[ele][index]), row, col)
-            self.layout[ele].addWidget(QLineEdit(self.data.data[ele][-1][index]), row, col + 1)
-            col += 2
+            h_layout.addWidget(QLabel(self.data.header[ele][index]))
+            h_layout.addWidget(QLineEdit(self.data.data[ele][-1][index]))
 
-        self.layout[ele].addWidget(RemoveButton(ele, row, self.remove_button_clicked), row, col)
+        h_layout.addWidget(RemoveButton(ele, self.layout[ele].count(), self.remove_button_clicked))
+        self.layout[ele].addLayout(h_layout)
 
     def remove_button_clicked(self):
         ele, row = self.sender().element, self.sender().row
-        if self.layout[ele].rowCount() == 1:
-            return
 
-        for idx in range(2 * len(self.data.header[ele])):
-            self.get_item(ele, row, idx).deleteLater()
+        self.data.remove(ele, row)
+        for col in range(2 * len(self.data.header)):
+            self.get_item(ele, row, col).deleteLater()
 
+        self.layout[ele].removeItem(self.get_item(ele, row))
         self.sender().deleteLater()
 
     def chk_class_info(self):
-    #   class 체크
+        # class 체크
         class_name = self.get_item('class', 0, 1).text().strip()
         if not nameing_rule(class_name):
-            return False
+            return '클래스 이름에', False
 
         class_parent = self.get_item('class', 0, 3).text().strip()
         if class_parent and not nameing_rule(class_parent):
-            return False
+            return '상위 클래스 이름에', False
     
-    #   method 체크
-        for row in range(self.layout['method'].rowCount()):
+        # method 체크
+        method_list = []
+        for row in range(self.layout['method'].count()):
             method_name = self.get_item('method', row, 1).text().strip()
-            if method_name and not nameing_rule(method_name):
-                return False
-
+            method_list += [method_name]
             method_input = self.get_item('method', row, 3).text().strip()
-            if method_input and not nameing_rule(method_input):
-                return False
+            try:
+                exec('def %s(%s):pass' % (method_name, method_input))
 
-    #   variable 체크
-        for row in range(self.layout['variable'].rowCount()):
+            except SyntaxError:
+                return '%d번 메서드에 문제가 있습니다.' % (row + 1), False
+
+        # method 중복 체크
+        if len(method_list) != len(set(method_list)):
+            return '메서드 이름은 중복', False
+
+        # variable 체크
+        variable_list = []
+        for row in range(self.layout['variable'].count()):
             variable_name = self.get_item('variable', row, 1).text().strip()
-            if variable_name and not nameing_rule(variable_name):
-                return False
+            variable_list += [variable_name]
+            if not variable_name or not nameing_rule(variable_name):
+                return '%d번 변수 이름에' % (row + 1), False
 
             variable_type = self.get_item('variable', row, 3).text().strip()
             if not nameing_rule(variable_type):
-                return False
-
+                return '%d번 변수 타입에' % (row + 1), False
+        
+            # 타입 체크 str, int, float 등 built-in 타입만 체크
             variable_initial_value = self.get_item('variable', row, 5).text().strip()
-            if variable_type != 'str':
+            if variable_type in keyword.kwlist and variable_type != 'str':
                 try:
                     eval('%s(%s)' % (variable_type, variable_initial_value))
 
                 except ValueError:
-                    return False
+                    return '%d번 변수 초기값에' % (row + 1), False
 
-        return True
+        if len(variable_list) != len(set(variable_list)):
+            return '변수 이름에 중복', False
+
+        return None, True
 
     def save_class_info(self):
-        if not self.chk_class_info():
+        msg, success = self.chk_class_info()
+
+        if not success:
             box = QMessageBox()
             box.setWindowTitle('경고')
-            box.setText('입력에 문제가 있습니다. 확인해주세요')
+            box.setText(msg + ' 문제가 있습니다.\n확인해주세요')
             box.setModal(True)
             box.exec_()
             return
 
         for ele in ['class', 'method', 'variable']:
-            for row in range(self.layout[ele].rowCount()):
+            for row in range(self.layout[ele].count()):
                 for col in range(len(self.data.header[ele])):
                     self.data.data[ele][row][col] = self.get_item(ele, row, 2 * col + 1).text().strip()
 
