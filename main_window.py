@@ -58,6 +58,7 @@ class NewProjectDialog(QDialog):
 
         all_layout.addLayout(button_layout, 2, 0)
 
+        self.setWindowTitle('새 프로젝트 만들기')
         self.setLayout(all_layout)
         self.setModal(True)
         self.show()
