@@ -49,7 +49,7 @@ class NewProjectDialog(QDialog):
         button_layout.addWidget(self.cancel_button)
 
         all_layout = QGridLayout()
-        all_layout.addWidget(QLabel('파일 이름'), 0, 0)
+        all_layout.addWidget(QLabel('프로젝트 이름'), 0, 0)
         all_layout.addWidget(self.project_name, 0, 1, 1, 2)
 
         all_layout.addWidget(QLabel('프로젝트 경로'), 1, 0)
