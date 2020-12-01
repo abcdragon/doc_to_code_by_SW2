@@ -3,7 +3,7 @@ class DataModel:
         self.header = {
             'class': ['name', 'parent'],
             'method': ['name', 'parameter', 'return'],
-            'variable': ['name', 'type', 'initial type']
+            'variable': ['name', 'type', 'initial value']
         }
 
         self.data = {'class': [['', '']], 'method': [], 'variable': []}
