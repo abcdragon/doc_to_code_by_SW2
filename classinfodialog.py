@@ -25,16 +25,18 @@ class ClassInfoDialog(QDialog):
         super().__init__()
         self.data = pre_info if pre_info else DataModel()
         self.success = False
+
+        self.layout = {element: QVBoxLayout() for element in ['class', 'method', 'variable']}
+        self.groupbox = {element: QGroupBox() for element in ['class', 'method', 'variable']}
+
         self.init_ui()
 
     def init_ui(self):
         self.setWindowTitle('클래스 정보입력')
 
-        self.layout = {element: QVBoxLayout() for element in ['class', 'method', 'variable']}
-
         main_layout = QVBoxLayout()
         for element in ['class', 'method', 'variable']:
-            groupbox, ele_layout = QGroupBox(element), self.layout[element]
+            groupbox, ele_layout = self.groupbox[element], self.layout[element]
 
             for row, texts in enumerate(self.data.data[element]):
                 layout = QHBoxLayout()
@@ -55,6 +57,8 @@ class ClassInfoDialog(QDialog):
                 add_button.clicked.connect(self.add_button_clicked)
                 main_layout.addWidget(add_button)
 
+        self.groupbox['class'].setFixedHeight(self.groupbox['class'].sizeHint().height())
+
         button_layout = QHBoxLayout()
         button_layout.addStretch(1)
 
@@ -69,7 +73,7 @@ class ClassInfoDialog(QDialog):
         main_layout.addLayout(button_layout)
         self.setLayout(main_layout)
 
-        self.setFixedSize(700, 300)
+        self.setFixedWidth(700)
         self.setModal(True)
         self.show()
 
@@ -88,7 +92,11 @@ class ClassInfoDialog(QDialog):
             h_layout.addWidget(QLineEdit(self.data.data[ele][-1][index]))
 
         h_layout.addWidget(RemoveButton(ele, self.layout[ele].count(), self.remove_button_clicked))
+
         self.layout[ele].addLayout(h_layout)
+
+        self.groupbox[ele].setFixedHeight(self.groupbox[ele].height() + 25)
+        self.setFixedHeight(self.height() + 25)
 
     def remove_button_clicked(self):
         ele, row = self.sender().element, self.sender().row
@@ -97,8 +105,14 @@ class ClassInfoDialog(QDialog):
         for col in range(2 * len(self.data.header)):
             self.get_item(ele, row, col).deleteLater()
 
+        for i in range(row, self.layout[ele].count()):
+            self.get_item(ele, i, 6).row -= 1
+
         self.layout[ele].removeItem(self.get_item(ele, row))
         self.sender().deleteLater()
+
+        self.groupbox[ele].setFixedHeight(self.groupbox[ele].sizeHint().height())
+        self.setFixedHeight(max(self.height() - 25, 250))
 
     def chk_class_info(self):
         # class 체크
